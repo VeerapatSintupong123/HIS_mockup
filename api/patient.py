@@ -31,14 +31,14 @@ PATIENTS = [
 @patient_bp.route('/api/getPatient', methods=['GET'])
 @swag_from({
     "tags": ["Patient"],
-    "description": "ดึงข้อมูลผู้ป่วยจากเลขบัตรประชาชนหรือ Passport",
+    "description": "ดึงข้อมูลผู้ป่วยจากเลขบัตรประชาชน, Passport หรือ HN",
     "parameters": [
         {
             "name": "id",
             "in": "query",
             "type": "string",
             "required": True,
-            "description": "National ID or Passport of the patient"
+            "description": "National ID, Passport หรือ HN ของผู้ป่วย"
         }
     ],
     "responses": {
@@ -90,7 +90,7 @@ PATIENTS = [
     }
 })
 def get_patient():
-    id_value = request.args.get("id")  # national ID or passport
+    id_value = request.args.get("id")
     if not id_value:
         return jsonify({
             "statusCode": 400,
@@ -99,9 +99,8 @@ def get_patient():
             "data": {}
         }), 400
 
-    # Search patient
     patient = next(
-        (p for p in PATIENTS if p["national_id"] == id_value or p["passboard"] == id_value),
+        (p for p in PATIENTS if p["national_id"] == id_value or p["passboard"] == id_value or p["hn"] == id_value),
         None
     )
 
