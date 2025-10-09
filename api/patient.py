@@ -9,21 +9,21 @@ PATIENTS = [
         "national_id": "1111111111111",
         "passboard": None,
         "fullname": "นายดีใจ แสนดี",
-        "language": "th"
+        "language": "TH"
     },
     {
         "hn": "00-00-00002",
         "national_id": None,
         "passboard": "P11223344",
         "fullname": "Mr. Deejai Sandee",
-        "language": "en"
+        "language": "EN"
     },
     {
         "hn": "00-00-00003",
         "national_id": None,
         "passboard": "P55667788",
         "fullname": "张伟",
-        "language": "ch"
+        "language": "CN"
     }
 ]
 
