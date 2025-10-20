@@ -12,11 +12,26 @@ DOCTOR_NAMES = [
 
 SPECIALTIES = ["อายุรกรรม", "กุมารเวชกรรม", "ศัลยกรรม", "จักษุวิทยา", "ทันตกรรม"]
 GENDERS = ["male", "female"]
-LOCATIONS = [
-    {"locationId": "00GI", "locationName": "GI & Liver Center"},
-    {"locationId": "01OPD", "locationName": "OPD Eye"},
-    {"locationId": "02MED", "locationName": "Medication Unit"}
+
+departments = [
+    "Cardiology",
+    "Neurology",
+    "Orthopedics",
+    "Pediatrics",
+    "Radiology",
+    "Oncology",
+    "Dermatology",
 ]
+
+LOCATIONS = []
+for i, dept in enumerate(departments):
+    location_id = f"{i:02d}{dept[:3].upper()}"
+    location_name = f"{dept} Center"
+    LOCATIONS.append({
+        "locationId": location_id,
+        "locationName": location_name,
+        "parentDeptName": dept
+    })
 
 def generate_schedules(location, num_schedules=2):
     schedules = []
@@ -137,25 +152,29 @@ def get_appointment():
             "data": []
         }), 400
 
-    # Generate multiple appointments
     num_appointments = random.randint(3, 6)
     data = []
     for _ in range(num_appointments):
-        doctor = random.choice(DOCTOR_NAMES)
-        doctor_id = str(random.randint(1000000, 9999999))
         location = random.choice(LOCATIONS)
         start_time = datetime.combine(appointment_date, datetime.min.time()) + timedelta(hours=random.randint(8, 15))
         end_time = start_time + timedelta(minutes=30)
 
-        data.append({
+        # Randomly decide to include doctorId and doctorName
+        include_doctor = random.choice([True, False])
+        appointment = {
             "hn": f"{random.randint(10,99)}-{random.randint(10,99)}-{random.randint(100000,999999)}",
             "en": f"O{random.randint(10,99)}-{random.randint(10,99)}-{random.randint(100000,999999)}",
-            "doctorId": doctor_id,
             "appointmentDatetime": start_time.strftime("%Y-%m-%d %H:%M:%S"),
             "comment": "",
             "status": random.choice(["book", "cancel"]),
             "location": [location]
-        })
+        }
+        if include_doctor:
+            appointment["doctorId"] = str(random.randint(1000000, 9999999))
+            appointment["doctorName"] = random.choice(DOCTOR_NAMES)
+        # else: doctorId and doctorName are omitted
+
+        data.append(appointment)
 
     return jsonify({
         "statusCode": 200,
