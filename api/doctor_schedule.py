@@ -5,6 +5,30 @@ import random
 
 doctor_bp = Blueprint('doctor_bp', __name__)
 
+PATIENTS = [
+    {
+        "hn": "00-00-00001",
+        "national_id": "1111111111111",
+        "passboard": None,
+        "fullname": "นายดีใจ แสนดี",
+        "language": "TH"
+    },
+    {
+        "hn": "00-00-00002",
+        "national_id": None,
+        "passboard": "P11223344",
+        "fullname": "Mr. Deejai Sandee",
+        "language": "EN"
+    },
+    {
+        "hn": "00-00-00003",
+        "national_id": None,
+        "passboard": "P55667788",
+        "fullname": "张伟",
+        "language": "CN"
+    }
+]
+
 DOCTOR_NAMES = [
     "นายมานะ มานี", "นางสาวสุนี สวัสดิ์", "นายสมชาย ใจดี",
     "นางสาวลลิตา แสงทอง", "นายวรวิทย์ เก่งการ"
@@ -152,33 +176,45 @@ def get_appointment():
             "data": []
         }), 400
 
-    num_appointments = random.randint(3, 6)
-    data = []
-    for _ in range(num_appointments):
-        location = random.choice(LOCATIONS)
-        start_time = datetime.combine(appointment_date, datetime.min.time()) + timedelta(hours=random.randint(8, 15))
-        end_time = start_time + timedelta(minutes=30)
+    lucky_number = random.randint(1, 3)
+    patients = random.sample(PATIENTS, k=lucky_number)
 
-        # Randomly decide to include doctorId and doctorName
+    appointments = []
+
+    for patient in patients:
+        hn = patient["hn"]
+        en = f"O{random.randint(10,99)}-{random.randint(10,99)}-{random.randint(100000,999999)}"
+
+        start_time = datetime.combine(
+            appointment_date, datetime.min.time()
+        ) + timedelta(hours=random.randint(8, 15))
+
+        location = random.choice(LOCATIONS)
         include_doctor = random.choice([True, False])
-        appointment = {
-            "hn": f"{random.randint(10,99)}-{random.randint(10,99)}-{random.randint(100000,999999)}",
-            "en": f"O{random.randint(10,99)}-{random.randint(10,99)}-{random.randint(100000,999999)}",
+
+        appt = {
+            "hn": hn,
+            "en": en,
             "appointmentDatetime": start_time.strftime("%Y-%m-%d %H:%M:%S"),
             "comment": "",
-            "status": random.choice(["book", "cancel"]),
-            "location": [location]
+            "status": "book",
+            "location": [
+                {
+                    "locationId": location["locationId"],
+                    "locationName": location["locationName"]
+                }
+            ]
         }
-        if include_doctor:
-            appointment["doctorId"] = str(random.randint(1000000, 9999999))
-            appointment["doctorName"] = random.choice(DOCTOR_NAMES)
-        # else: doctorId and doctorName are omitted
 
-        data.append(appointment)
+        if include_doctor:
+            appt["doctorId"] = str(random.randint(1000000, 9999999))
+            appt["doctorName"] = random.choice(DOCTOR_NAMES)
+
+        appointments.append(appt)
 
     return jsonify({
         "statusCode": 200,
         "message": "Success",
         "description": "",
-        "data": data
+        "data": appointments
     })
