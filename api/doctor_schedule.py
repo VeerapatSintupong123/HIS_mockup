@@ -49,9 +49,9 @@ departments = [
 
 LOCATIONS = [
     {
-        "locationId": f"{i:02d}{dept[:3].upper()}",
+        "locationId": f"{i+1:03d}",  # 001, 002, 003, 004
         "locationName": dept,
-        "parentDeptName": f"{dept} Center"
+        "parentDeptName": f"{dept} Building"
     }
     for i, dept in enumerate(departments)
 ]
