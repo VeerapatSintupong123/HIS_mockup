@@ -47,13 +47,16 @@ departments = [
     "Dermatology",
 ]
 
+room_ids = [f"{i+1:03d}" for i in range(4)] # ["001", "002", "003", "004"]
+
 LOCATIONS = [
     {
-        "locationId": f"{i+1:03d}",  # 001, 002, 003, 004
+        "locationId": loc_id,
         "locationName": dept,
         "parentDeptName": f"{dept} Building"
     }
-    for i, dept in enumerate(departments)
+    for dept in departments
+    for loc_id in room_ids
 ]
 
 APPOINTMENT_MAP = {
