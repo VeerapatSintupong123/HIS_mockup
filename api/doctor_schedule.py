@@ -47,15 +47,14 @@ departments = [
     "Dermatology",
 ]
 
-LOCATIONS = []
-for i, dept in enumerate(departments):
-    location_id = f"{i:02d}{dept[:3].upper()}"
-    location_name = f"{dept} Center"
-    LOCATIONS.append({
-        "locationId": location_id,
-        "locationName": location_name,
-        "parentDeptName": dept
-    })
+LOCATIONS = [
+    {
+        "locationId": f"{i:02d}{dept[:3].upper()}",
+        "locationName": dept,
+        "parentDeptName": f"{dept} Center"
+    }
+    for i, dept in enumerate(departments)
+]
 
 APPOINTMENT_MAP = {
     "00-00-00001": None,
@@ -63,15 +62,52 @@ APPOINTMENT_MAP = {
     "00-00-00003": {}
 }
 
-def generate_appointment_for_patient(hn, appointment_date):
-    en = f"O{random.randint(10,99)}-{random.randint(10,99)}-{random.randint(100000,999999)}"
-    
-    start_time = datetime.combine(
-        appointment_date, datetime.min.time()
-    ) + timedelta(hours=random.randint(8, 15))
+def generate_realistic_schedules(location):
+    SLOT_TEMPLATES = [
+        ("08:00:00", "12:00:00"),  # morning
+        ("13:00:00", "16:00:00"),  # afternoon
+        ("16:00:00", "20:00:00"),  # evening
+    ]
 
+    WEEKDAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]
+    
+    # choose 3–5 working days
+    working_days = random.sample(WEEKDAYS, k=random.randint(3, 5))
+
+    schedules = []
+    start_date = datetime.now().date()
+    end_date = start_date + timedelta(days=30)
+
+    for day in working_days:
+        # doctor works 1–3 slots in a day
+        num_slots = random.randint(1, 3)
+        slots = random.sample(SLOT_TEMPLATES, num_slots)
+
+        for start_time, end_time in slots:
+            schedules.append({
+                "startDate": str(start_date),
+                "endDate": str(end_date),
+                "weekDay": day,
+                "startTime": start_time,
+                "endTime": end_time,
+                "locationId": location["locationId"],
+                "locationName": location["locationName"],
+                "parentDeptName": location["parentDeptName"]
+            })
+
+    return schedules
+
+def generate_appointment_for_patient(hn, appointment_date):
+    """Generate a single appointment for a patient."""
+    en = f"O{random.randint(10,99)}-{random.randint(10,99)}-{random.randint(100000,999999)}"
+
+    # Random time between 8:00 - 15:00
+    start_time = datetime.combine(appointment_date, datetime.min.time()) + timedelta(
+        hours=random.randint(8, 15)
+    )
+
+    # Pick location from LOCATIONS
     location = random.choice(LOCATIONS)
-    include_doctor = random.choice([True, False])
 
     appt = {
         "hn": hn,
@@ -82,32 +118,37 @@ def generate_appointment_for_patient(hn, appointment_date):
         "location": [
             {
                 "locationId": location["locationId"],
-                "locationName": location["locationName"]
+                "locationName": location["locationName"],
+                "parentDeptName": location["parentDeptName"]
             }
         ]
     }
 
-    if include_doctor:
+    # 50% chance include doctor
+    if random.choice([True, False]):
         appt["doctorId"] = str(random.randint(1000000, 9999999))
         appt["doctorName"] = random.choice(DOCTOR_NAMES)
 
     return appt
 
+
 def generate_schedules(location, num_schedules=2):
     schedules = []
     for _ in range(num_schedules):
         start_date = datetime.now().date() + timedelta(days=random.randint(0, 5))
-        start_time_hour = random.randint(8, 14)
+        start_hour = random.randint(8, 14)
+
         schedules.append({
             "startDate": str(start_date),
             "endDate": str(start_date + timedelta(days=30)),
-            "startTime": f"{start_time_hour:02d}:00:00",
-            "endTime": f"{start_time_hour+3:02d}:00:00",
+            "startTime": f"{start_hour:02d}:00:00",
+            "endTime": f"{start_hour+3:02d}:00:00",
             "weekDay": random.choice(["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]),
             "locationId": location["locationId"],
             "locationName": location["locationName"]
         })
     return schedules
+
 
 @doctor_bp.route('/api/getDoctorSchedule', methods=['GET'])
 @swag_from({
@@ -119,38 +160,27 @@ def generate_schedules(location, num_schedules=2):
             "schema": {
                 "type": "object",
                 "properties": {
-                    "statusCode": {"type": "integer", "example": 200},
-                    "message": {"type": "string", "example": "Success"},
-                    "description": {"type": "string", "example": ""},
-                    "data": {
-                        "type": "object",
-                        "properties": {
-                            "doctorId": {"type": "string", "example": "0139910"},
-                            "doctorName": {"type": "string", "example": "นายมานะ มานี"},
-                            "gender": {"type": "string", "example": "male"},
-                            "licenseNo": {"type": "string", "example": "ว.23123"},
-                            "specialty": {"type": "string", "example": "อายุรกรรม"},
-                            "photo": {"type": "string", "example": "https://xxxxxx.com/0139910"},
-                            "location": {"type": "array"},
-                            "schedule": {"type": "array"}
-                        }
-                    }
+                    "statusCode": {"type": "integer"},
+                    "message": {"type": "string"},
+                    "description": {"type": "string"},
+                    "data": {"type": "object"}
                 }
             }
         }
     }
 })
 def get_doctor_schedule():
+    doctor_id = str(random.randint(1000000, 9999999))
     doctor_name = random.choice(DOCTOR_NAMES)
     gender = random.choice(GENDERS)
     specialty = random.choice(SPECIALTIES)
-    doctor_id = str(random.randint(1000000, 9999999))
-    location_list = random.sample(LOCATIONS, k=random.randint(1, len(LOCATIONS)))
+
+    # doctor works in 1–2 locations max
+    location_list = random.sample(LOCATIONS, k=random.randint(1, 2))
 
     schedules = []
     for loc in location_list:
-        schedules.extend(generate_schedules(loc, num_schedules=random.randint(1,2)))
-
+        schedules.extend(generate_realistic_schedules(loc))
 
     data = {
         "doctorId": doctor_id,
@@ -162,39 +192,33 @@ def get_doctor_schedule():
         "location": location_list,
         "schedule": schedules
     }
+
     return jsonify({"statusCode": 200, "message": "Success", "description": "", "data": data})
 
 @doctor_bp.route('/api/getAppointment', methods=['GET'])
 @swag_from({
     "tags": ["Appointment"],
-    "description": "ข้อมูลการนัดหมาย",
+    "description": "ข้อมูลการนัดหมายของผู้ป่วยทั้งหมด",
     "parameters": [
         {
             "name": "appointmentDatetime",
             "in": "query",
             "type": "string",
             "required": True,
-            "description": "วันที่นัดหมาย"
+            "description": "วันที่นัดหมาย (YYYY-MM-DD)"
         }
     ],
     "responses": {
         200: {
             "description": "Success",
-            "schema": {
-                "type": "object",
-                "properties": {
-                    "statusCode": {"type": "integer", "example": 200},
-                    "message": {"type": "string", "example": "Success"},
-                    "description": {"type": "string", "example": ""},
-                    "data": {"type": "array"}
-                }
-            }
+            "schema": {"type": "object"}
         }
     }
 })
 def get_appointment():
-    appointment_date_str = request.args.get("appointmentDatetime")
-    if not appointment_date_str:
+    date_str = request.args.get("appointmentDatetime")
+
+    if not date_str:
         return jsonify({
             "statusCode": 400,
             "message": "Bad request",
@@ -203,7 +227,7 @@ def get_appointment():
         }), 400
 
     try:
-        appointment_date = datetime.strptime(appointment_date_str, "%Y-%m-%d").date()
+        appointment_date = datetime.strptime(date_str, "%Y-%m-%d").date()
     except ValueError:
         return jsonify({
             "statusCode": 400,
@@ -214,15 +238,14 @@ def get_appointment():
 
     appointments = []
 
-    # LOOP through each patient IN ORDER and assign appointment based on APPOINTMENT_MAP
-    for p in PATIENTS:
-        hn = p["hn"]
+    for patient in PATIENTS:
+        hn = patient["hn"]
 
-        # No appointment condition
+        # No appointment for this patient
         if APPOINTMENT_MAP[hn] is None:
             continue
 
-        # Generate appointment only once
+        # Generate once
         if APPOINTMENT_MAP[hn] == {}:
             APPOINTMENT_MAP[hn] = generate_appointment_for_patient(hn, appointment_date)
 
