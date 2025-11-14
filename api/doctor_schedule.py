@@ -57,6 +57,42 @@ for i, dept in enumerate(departments):
         "parentDeptName": dept
     })
 
+APPOINTMENT_MAP = {
+    "00-00-00001": None,
+    "00-00-00002": {},
+    "00-00-00003": {}
+}
+
+def generate_appointment_for_patient(hn, appointment_date):
+    en = f"O{random.randint(10,99)}-{random.randint(10,99)}-{random.randint(100000,999999)}"
+    
+    start_time = datetime.combine(
+        appointment_date, datetime.min.time()
+    ) + timedelta(hours=random.randint(8, 15))
+
+    location = random.choice(LOCATIONS)
+    include_doctor = random.choice([True, False])
+
+    appt = {
+        "hn": hn,
+        "en": en,
+        "appointmentDatetime": start_time.strftime("%Y-%m-%d %H:%M:%S"),
+        "comment": "",
+        "status": "book",
+        "location": [
+            {
+                "locationId": location["locationId"],
+                "locationName": location["locationName"]
+            }
+        ]
+    }
+
+    if include_doctor:
+        appt["doctorId"] = str(random.randint(1000000, 9999999))
+        appt["doctorName"] = random.choice(DOCTOR_NAMES)
+
+    return appt
+
 def generate_schedules(location, num_schedules=2):
     schedules = []
     for _ in range(num_schedules):
@@ -176,41 +212,21 @@ def get_appointment():
             "data": []
         }), 400
 
-    lucky_number = random.randint(1, 3)
-    patients = random.sample(PATIENTS, k=lucky_number)
-
     appointments = []
 
-    for patient in patients:
-        hn = patient["hn"]
-        en = f"O{random.randint(10,99)}-{random.randint(10,99)}-{random.randint(100000,999999)}"
+    # LOOP through each patient IN ORDER and assign appointment based on APPOINTMENT_MAP
+    for p in PATIENTS:
+        hn = p["hn"]
 
-        start_time = datetime.combine(
-            appointment_date, datetime.min.time()
-        ) + timedelta(hours=random.randint(8, 15))
+        # No appointment condition
+        if APPOINTMENT_MAP[hn] is None:
+            continue
 
-        location = random.choice(LOCATIONS)
-        include_doctor = random.choice([True, False])
+        # Generate appointment only once
+        if APPOINTMENT_MAP[hn] == {}:
+            APPOINTMENT_MAP[hn] = generate_appointment_for_patient(hn, appointment_date)
 
-        appt = {
-            "hn": hn,
-            "en": en,
-            "appointmentDatetime": start_time.strftime("%Y-%m-%d %H:%M:%S"),
-            "comment": "",
-            "status": "book",
-            "location": [
-                {
-                    "locationId": location["locationId"],
-                    "locationName": location["locationName"]
-                }
-            ]
-        }
-
-        if include_doctor:
-            appt["doctorId"] = str(random.randint(1000000, 9999999))
-            appt["doctorName"] = random.choice(DOCTOR_NAMES)
-
-        appointments.append(appt)
+        appointments.append(APPOINTMENT_MAP[hn])
 
     return jsonify({
         "statusCode": 200,
