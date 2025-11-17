@@ -127,8 +127,7 @@ def generate_appointment_for_patient(hn, appointment_date):
         ]
     }
 
-    # 50% chance include doctor
-    if random.choice([True, False]):
+    if "3" in hn:
         appt["doctorId"] = str(random.randint(1000000, 9999999))
         appt["doctorName"] = random.choice(DOCTOR_NAMES)
 
