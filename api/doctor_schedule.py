@@ -8,21 +8,21 @@ doctor_bp = Blueprint('doctor_bp', __name__)
 PATIENTS = [
     {
         "hn": "00-00-00001",
-        "national_id": "1111111111111",
+        "national_id": "1100401273315",
         "passboard": None,
-        "fullname": "นายดีใจ แสนดี",
+        "fullname": "นายภูมินันท์ อัศวะศิริจินดา",
         "language": "TH"
     },
     {
         "hn": "00-00-00002",
-        "national_id": None,
-        "passboard": "P11223344",
-        "fullname": "Mr. Deejai Sandee",
+        "national_id": "1102003640352",
+        "passboard": None,
+        "fullname": "Mr. Sornram Chalernma",
         "language": "EN"
     },
     {
         "hn": "00-00-00003",
-        "national_id": None,
+        "national_id": "1100501642291",
         "passboard": "P55667788",
         "fullname": "张伟",
         "language": "CN"
